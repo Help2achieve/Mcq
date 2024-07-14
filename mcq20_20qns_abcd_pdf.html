@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aviation Quiz Application</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .quiz-container {
+            position: relative;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        #question {
+            font-size: 22px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        #answers {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .btn {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            min-height: 50px;
+            transition: background-color 0.3s;
+            width: 100%;
+            text-align: left;
+        }
+        .btn:active {
+            background-color: #0056b3;
+        }
+        .btn.correct {
+            background-color: #28a745;
+        }
+        .btn.wrong {
+            background-color: #dc3545;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+            min-height: 27px;
+        }
+        #final-score {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .nav-btn {
+            background-color: #6c757d;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+            min-width: 100px;
+        }
+        #question-number {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #6c757d;
+        }
+        #restart-btn, #download-btn {
+            background-color: #28a745;
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 18px;
+        }
+        #download-btn {
+            background-color: #4CAF50;
+            margin-left: 10px;
+        }
+        #download-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="timer">00:00</div>
+    <div id="question-number">Question 1 of 5</div>
+    <div id="question">Question text</div>
+    <div id="answers"></div>
+    <div id="result"></div>
+    <div class="navigation">
+        <button class="nav-btn" id="prev-btn">Previous</button>
+        <button class="nav-btn" id="next-btn">Next</button>
+    </div>
+    <div id="final-score"></div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            question: "What is an aerodrome?",
+            answers: [
+                { text: "A place where aircraft are stored.", correct: false },
+                { text: "A defined area on land or water intended for the arrival, departure, and surface movement of aircraft.", correct: true },
+                { text: "A location for aircraft maintenance.", correct: false },
+                { text: "A terminal for passenger processing.", correct: false }
+            ]
+        },
+        {
+            question: "What does an airport facilitate?",
+            answers: [
+                { text: "Only the landing and takeoff of aircraft.", correct: false },
+                { text: "A transfer between the surface and the air mode.", correct: true },
+                { text: "Only the parking of aircraft.", correct: false },
+                { text: "The maintenance of aircraft.", correct: false }
+            ]
+        },
+        {
+            question: "Which of the following best describes an international airport?",
+            answers: [
+                { text: "An airport that handles domestic flights only.", correct: false },
+                { text: "An airport designated by a state for international air traffic with customs and immigration facilities.", correct: true },
+                { text: "An airport used exclusively by military aircraft.", correct: false },
+                { text: "An airport without any customs facilities.", correct: false }
+            ]
+        },
+        {
+            question: "What is the purpose of a terminal building?",
+            answers: [
+                { text: "To repair aircraft.", correct: false },
+                { text: "To store cargo.", correct: false },
+                { text: "To facilitate the transfer of passengers, luggage, and freight between surface and air modes.", correct: true },
+                { text: "To serve as a control tower.", correct: false }
+            ]
+        },
+        {
+            question: "What activities are included in ground handling?",
+            answers: [
+                { text: "In-flight services.", correct: false },
+                { text: "The activities required to service a parked aircraft after its arrival and prior to its departure for another flight.", correct: true },
+                { text: "Air traffic control.", correct: false },
+                { text: "Aircraft manufacturing.", correct: false }
+            ]
+        },
+        {
+            question: "What is the Aerodrome Reference Point (ARP)?",
+            answers: [
+                { text: "The highest point of an aerodrome.", correct: false },
+                { text: "The designated geographical location of an aerodrome.", correct: true },
+                { text: "The area for aircraft parking.", correct: false },
+                { text: "The runway threshold.", correct: false }
+            ]
+        },
+        {
+            question: "Where is an aircraft stand located?",
+            answers: [
+                { text: "On the runway.", correct: false },
+                { text: "In the control tower.", correct: false },
+                { text: "On an apron, intended for parking an aircraft.", correct: true },
+                { text: "In the terminal building.", correct: false }
+            ]
+        },
+        {
+            question: "What is the apron used for?",
+            answers: [
+                { text: "Aircraft take-off and landing.", correct: false },
+                { text: "Loading or unloading passengers, mail, or cargo, fuelling, parking, or maintenance.", correct: true },
+                { text: "Passenger security screening.", correct: false },
+                { text: "Air traffic control.", correct: false }
+            ]
+        },
+        {
+            question: "What area does the term 'airside' refer to?",
+            answers: [
+                { text: "The passenger waiting area.", correct: false },
+                { text: "The movement area of an airport, adjacent terrain, and buildings with controlled access.", correct: true },
+                { text: "The parking lot.", correct: false },
+                { text: "The terminal building.", correct: false }
+            ]
+        },
+        {
+            question: "What is the primary purpose of screening at an airport?",
+            answers: [
+                { text: "To expedite passenger boarding.", correct: false },
+                { text: "To identify and/or detect dangerous devices or substances.", correct: true },
+                { text: "To assist with luggage handling.", correct: false },
+                { text: "To manage airport traffic.", correct: false }
+            ]
+        },
+        {
+            question: "What does security in aviation aim to safeguard against?",
+            answers: [
+                { text: "Weather disturbances.", correct: false },
+                { text: "Acts of unlawful interference.", correct: true },
+                { text: "Technical malfunctions.", correct: false },
+                { text: "Airport congestion.", correct: false }
+            ]
+        },
+        {
+            question: "What is Foreign Object Debris (FOD)?",
+            answers: [
+                { text: "Objects with operational functions in the movement area.", correct: false },
+                { text: "Inanimate objects in the movement area that pose a hazard.", correct: true },
+                { text: "Tools used in aircraft maintenance.", correct: false },
+                { text: "Passenger belongings.", correct: false }
+            ]
+        },
+        {
+            question: "What is a hot spot on an aerodrome?",
+            answers: [
+                { text: "A designated aircraft parking area.", correct: false },
+                { text: "A location with a potential risk of collision or runway incursion requiring heightened attention.", correct: true },
+                { text: "A high-security zone.", correct: false },
+                { text: "An area for cargo handling.", correct: false }
+            ]
+        },
+        {
+            question: "What is the purpose of a holding bay?",
+            answers: [
+                { text: "To repair aircraft engines.", correct: false },
+                { text: "To store luggage.", correct: false },
+                { text: "To hold or bypass aircraft to facilitate efficient surface movement.", correct: true },
+                { text: "To manage passenger boarding.", correct: false }
+            ]
+        },
+        {
+            question: "What part of an aerodrome does the manoeuvring area include?",
+            answers: [
+                { text: "Only the parking areas.", correct: false },
+                { text: "The take-off, landing, and taxiing areas, excluding aprons.", correct: true },
+                { text: "The terminal buildings.", correct: false },
+                { text: "The cargo handling areas.", correct: false }
+            ]
+        },
+        {
+            question: "What does the movement area of an aerodrome consist of?",
+            answers: [
+                { text: "Only the aprons.", correct: false },
+                { text: "Only the taxiways.", correct: false },
+                { text: "The manoeuvring area and the apron(s).", correct: true },
+                { text: "The passenger terminal.", correct: false }
+            ]
+        },
+        {
+            question: "What is a runway used for?",
+            answers: [
+                { text: "Aircraft maintenance.", correct: false },
+                { text: "Aircraft take-off and landing.", correct: true },
+                { text: "Passenger boarding.", correct: false },
+                { text: "Cargo storage.", correct: false }
+            ]
+        },
+        {
+            question: "What is the purpose of a Runway End Safety Area (RESA)?",
+            answers: [
+                { text: "To mark the end of the runway.", correct: false },
+                { text: "To reduce the risk of damage to an aeroplane undershooting or overrunning the runway.", correct: true },
+                { text: "To provide additional parking space.", correct: false },
+                { text: "To house the air traffic control tower.", correct: false }
+            ]
+        },
+        {
+            question: "What does Runway Visual Range (RVR) indicate?",
+            answers: [
+                { text: "The length of the runway.", correct: false },
+                { text: "The range over which a pilot can see runway markings or lights.", correct: true },
+                { text: "The width of the runway.", correct: false },
+                { text: "The height of the control tower.", correct: false }
+            ]
+        },
+        {
+            question: "What is a Safety Management System (SMS) in aviation?",
+            answers: [
+                { text: "A system for managing passenger data.", correct: false },
+                { text: "A systematic approach to managing safety, including organizational structure, accountabilities, policies, and procedures.", correct: true },
+                { text: "A method for controlling air traffic.", correct: false },
+                { text: "A process for handling cargo.", correct: false }
+            ]
+        }
+    ];
+
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let startTime;
+    let timerInterval;
+
+    function startTimer() {
+        startTime = new Date().getTime();
+        updateTimer();
+        timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+        const currentTime = new Date().getTime();
+        const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+        const minutes = Math.floor(elapsedTime / 60);
+        const seconds = elapsedTime % 60;
+        document.getElementById('timer').textContent = `${padZero(minutes)}:${padZero(seconds)}`;
+    }
+
+    function padZero(num) {
+        return num.toString().padStart(2, '0');
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+    }
+
+    function showQuestion() {
+        const questionData = quizData[currentQuestionIndex];
+        const questionElement = document.getElementById('question');
+        const answersElement = document.getElementById('answers');
+        const resultElement = document.getElementById('result');
+        const questionNumberElement = document.getElementById('question-number');
+        const nextButton = document.getElementById('next-btn');
+
+        questionNumberElement.innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+        questionElement.innerText = questionData.question;
+        answersElement.innerHTML = '';
+
+        questionData.answers.forEach((answer, index) => {
+            const button = document.createElement('button');
+            button.classList.add('btn');
+            button.innerText = `${String.fromCharCode(97 + index)}. ${answer.text}`;
+            button.addEventListener('click', () => selectAnswer(answer, button));
+            answersElement.appendChild(button);
+        });
+
+        resultElement.innerHTML = '';
+        document.getElementById('prev-btn').disabled = currentQuestionIndex === 0;
+        nextButton.disabled = true;
+        nextButton.style.backgroundColor = '';
+        nextButton.style.cursor = 'default';
+
+        if (currentQuestionIndex === 0) {
+            startTimer();
+        }
+    }
+
+    function selectAnswer(answer, button) {
+        const resultElement = document.getElementById('result');
+        const nextButton = document.getElementById('next-btn');
+
+        if (answer.correct) {
+            button.classList.add('correct');
+            resultElement.innerHTML = 'Correct!';
+            score++;
+            nextButton.disabled = false;
+            nextButton.style.backgroundColor = '#4a4a4a';
+            nextButton.style.cursor = 'pointer';
+        } else {
+            button.classList.add('wrong');
+            resultElement.innerHTML = 'Wrong! Try again.';
+            nextButton.disabled = true;
+            nextButton.style.backgroundColor = '';
+            nextButton.style.cursor = 'default';
+        }
+    }
+
+    function nextQuestion() {
+        const nextButton = document.getElementById('next-btn');
+        
+        if (currentQuestionIndex < quizData.length - 1) {
+            currentQuestionIndex++;
+            showQuestion();
+        } else {
+            showFinalScore();
+        }
+        
+        nextButton.style.backgroundColor = '';
+        nextButton.style.cursor = 'default';
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            showQuestion();
+        }
+    }
+
+    function showFinalScore() {
+        stopTimer();
+        const finalTime = document.getElementById('timer').textContent;
+        document.querySelector('.quiz-container').innerHTML = `
+            <div id="timer">${finalTime}</div>
+            <div id="final-score">Final Score: ${score}/${quizData.length}</div>
+            <div>Total Time: ${finalTime}</div>
+            <button id="restart-btn">Restart Quiz</button>
+            <button id="download-btn">Download Quiz</button>
+        `;
+        document.getElementById('restart-btn').addEventListener('click', restartQuiz);
+        document.getElementById('download-btn').addEventListener('click', downloadQuiz);
+    }
+
+    function restartQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        document.querySelector('.quiz-container').innerHTML = `
+            <div id="timer">00:00</div>
+            <div id="question-number">Question 1 of ${quizData.length}</div>
+            <div id="question">Question text</div>
+            <div id="answers"></div>
+            <div id="result"></div>
+            <div class="navigation">
+                <button class="nav-btn" id="prev-btn">Previous</button>
+                <button class="nav-btn" id="next-btn">Next</button>
+            </div>
+            <div id="final-score"></div>
+        `;
+        document.getElementById('next-btn').addEventListener('click', nextQuestion);
+        document.getElementById('prev-btn').addEventListener('click', prevQuestion);
+        showQuestion();
+    }
+
+    function downloadQuiz() {
+        let htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviation Quiz Questions</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+        .question { margin-bottom: 20px; }
+        .answers { margin-left: 20px; }
+        .correct { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Aviation Quiz Questions</h1>
+    `;
+
+    quizData.forEach((q, index) => {
+        htmlContent += `
+    <div class="question">
+        <h3>${index + 1}. ${q.question}</h3>
+        <div class="answers">
+            ${q.answers.map((a, i) => `<p${a.correct ? ' class="correct"' : ''}>${String.fromCharCode(97 + i)}. ${a.text}${a.correct ? ' (Correct)' : ''}</p>`).join('')}
+        </div>
+    </div>
+        `;
+    });
+
+    htmlContent += `
+</body>
+</html>
+    `;
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    saveAs(blob, 'aviation_quiz_questions.html');
+}
+
+    document.getElementById('next-btn').addEventListener('click', nextQuestion);
+    document.getElementById('prev-btn').addEventListener('click', prevQuestion);
+    showQuestion();
+
+    document.body.addEventListener('touchstart', function(){}, {passive: true});
+</script>
+
+</body>
+</html>
